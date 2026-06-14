@@ -78,7 +78,7 @@ index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
 | top limit=10 user src_ip
 ```
 
-Analyze successful vs failed logins:
+Analyze successful vs. failed logins:
 
 ```spl
 index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
