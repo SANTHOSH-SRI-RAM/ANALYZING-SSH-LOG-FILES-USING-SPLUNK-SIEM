@@ -1,127 +1,152 @@
-# SSH Log Analysis Using Splunk SIEM
+# Analyzing SSH Log Files Using Splunk SIEM
+
+## Introduction
+
+SSH (Secure Shell) log files contain valuable information about remote access to servers, including login attempts, commands executed, and session details. Analyzing SSH logs using Splunk SIEM enables security professionals to monitor access to critical systems, detect anomalies, and identify potential security threats.
 
 ## Project Overview
 
-This project demonstrates the analysis of SSH authentication logs using Splunk SIEM to identify suspicious login activities, monitor user behavior, and detect potential security threats. The project focuses on collecting SSH log data, extracting relevant fields, and performing security analytics using Splunk Search Processing Language (SPL).
+In this project, we will upload sample SSH log files to Splunk SIEM and perform various analyses to gain insights into SSH activity within the network.
 
-## Objectives
+## Prerequisites
 
-- Monitor SSH login activity.
-- Identify successful and failed login attempts.
-- Detect brute-force attack patterns.
-- Analyze user access behavior.
-- Investigate suspicious source IP addresses.
-- Generate security insights using Splunk dashboards and reports.
+Before starting the project, ensure the following:
 
-## Tools & Technologies
+- Splunk instance is installed and configured.
+- SSH log data sources are configured to forward logs to Splunk.
+- Obtain sample SSH log files in a suitable format (e.g., text files).
+- Ensure the log files contain relevant SSH events, including timestamps, source IP addresses, usernames, actions (login, logout), etc.
+- Save the sample log files in a directory accessible by the Splunk instance.
 
-- Splunk Enterprise
-- Linux SSH Logs
-- SPL (Search Processing Language)
-- Syslog Data Sources
+## Steps to Upload Sample SSH Log Files to Splunk SIEM
 
-## Project Architecture
+### 1. Prepare Sample SSH Log Files
 
-1. SSH logs generated from Linux servers.
-2. Logs ingested into Splunk.
-3. Data indexed and normalized.
-4. SPL queries used for analysis.
-5. Security events visualized through dashboards.
+- Obtain sample SSH log files in a suitable format (e.g., text files).
+- Ensure the log files contain relevant SSH events, including timestamps, source IP addresses, usernames, actions (login, logout), etc.
+- Save the sample log files in a directory accessible by the Splunk instance.
 
-## Dataset
+### 2. Upload Log Files to Splunk
 
-The dataset contains SSH authentication logs with the following fields:
+- Log in to the Splunk web interface.
+- Navigate to Settings > Add Data.
+- Select Upload as the data input method.
 
-- Timestamp
-- Username
-- Source IP Address
-- Login Status
-- Session Information
-- Commands Executed
+### 3. Choose File
 
-## Key Analysis Performed
+- Click on Select File and choose the sample SSH log file you prepared earlier.
 
-### 1. SSH Login Monitoring
+### 4. Set Source Type
 
-Tracked all SSH authentication attempts and user activities.
+- In the Set Source Type section, specify the source type for the uploaded log file.
+- Choose the appropriate source type for SSH logs (e.g., syslog or a custom source type if applicable).
+
+### 5. Review Settings
+
+- Review other settings such as index, host, and sourcetype.
+- Ensure the settings are configured correctly to match the sample SSH log file.
+
+### 6. Click Upload
+
+- Once all settings are configured, click on the Review button.
+- Review the settings one final time to ensure accuracy.
+- Click Submit to upload the sample SSH log file to Splunk.
+
+### 7. Verify Upload
+
+- After uploading, navigate to the search bar in the Splunk interface.
+- Run a search query to verify that the uploaded SSH events are visible.
+
+## Steps to Analyze SSH Log Files in Splunk SIEM
+
+### 1. Search for SSH Events
+
+- Open Splunk interface and navigate to the search bar.
+- Enter the following search query to retrieve SSH events:
 
 ```spl
-index=ssh_logs
+index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
 ```
 
-### 2. Failed Login Detection
+### 2. Extract Relevant Fields
 
-Identified unauthorized access attempts.
+- Identify key fields in SSH logs such as timestamps, source IP addresses, usernames, actions, etc.
+- Use Splunk's field extraction capabilities or regular expressions to extract these fields for better analysis.
+
+Example extraction command:
 
 ```spl
-index=ssh_logs action="failed"
+| rex field=_raw "<regex_pattern>"
+```
+
+### 3. Analyze SSH Activity Patterns
+
+Determine the distribution of SSH commands executed:
+
+```spl
+index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
+| stats count by command
+```
+
+Identify top users or source IP addresses accessing the SSH server:
+
+```spl
+index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
+| top limit=10 user src_ip
+```
+
+Analyze successful vs. failed SSH login attempts:
+
+```spl
+index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
+| stats count by action
+```
+
+### 4. Detect Anomalies
+
+Look for unusual patterns in SSH activity (e.g., sudden spikes in login attempts):
+
+```spl
+index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
+| timechart span=1h count by _time
+```
+
+Analyze failed login attempts:
+
+```spl
+index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
+| search action="failed"
+```
+
+Investigate SSH sessions from unusual or suspicious source IP addresses:
+
+```spl
+index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
+| search src_ip="suspicious_ip"
+```
+
+### 5. Monitor User Behavior
+
+Identify users with multiple failed login attempts:
+
+```spl
+index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
+| search action="failed"
 | stats count by user
 ```
 
-### 3. Top Source IP Analysis
-
-Detected IP addresses generating the highest number of login attempts.
+Analyze user session durations:
 
 ```spl
-index=ssh_logs
-| top src_ip
+index=<your_ssh_index> sourcetype=<your_ssh_sourcetype>
+| stats range(_time) as session_duration by session_id
+| stats avg(session_duration) as avg_session_duration by user
 ```
 
-### 4. User Activity Analysis
+## Conclusion
 
-Monitored user access frequency.
+Analyzing SSH log files using Splunk SIEM provides valuable insights into remote access to servers within a network. By monitoring SSH events, detecting anomalies, and correlating with other logs, organizations can enhance their security posture and protect against unauthorized access and potential security threats.
 
-```spl
-index=ssh_logs
-| stats count by user
-```
+Feel free to customize these steps according to your specific use case and requirements.
 
-### 5. Anomaly Detection
-
-Detected unusual spikes in SSH activity.
-
-```spl
-index=ssh_logs
-| timechart span=1h count
-```
-
-## Findings
-
-- Multiple failed login attempts were observed from specific source IPs.
-- Certain users generated higher login frequencies than normal.
-- Time-based analysis helped identify unusual authentication spikes.
-- Suspicious activity patterns could indicate brute-force attempts.
-
-## Security Recommendations
-
-- Enable Multi-Factor Authentication (MFA).
-- Restrict SSH access using firewall rules.
-- Implement account lockout policies.
-- Continuously monitor authentication logs.
-- Block malicious IP addresses automatically.
-
-## Skills Demonstrated
-
-- Security Monitoring
-- Log Analysis
-- SIEM Operations
-- Threat Detection
-- Incident Investigation
-- SPL Query Writing
-- Security Analytics
-
-## Learning Outcomes
-
-Through this project, I gained hands-on experience in:
-
-- Collecting and analyzing SSH logs.
-- Writing SPL queries for threat detection.
-- Investigating authentication anomalies.
-- Using Splunk SIEM for security monitoring.
-- Generating actionable security insights.
-
-## Author
-
-Santhosh Sri Ram V
-
-Cybersecurity Analyst | SOC Analyst | Security Operations
+Happy analyzing!
